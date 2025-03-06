@@ -20,6 +20,7 @@ const game = new Phaser.Game(config);
 
 let player, enemy, thunders, cursors;
 let playerDirection = "right";
+let playerColision = true;
 
 let score = 0;
 let playerLives = 3;
@@ -51,13 +52,15 @@ function create() {
 
     thunders = this.physics.add.group({
         defaultKey: 'thunderRight',
-        maxSize: 2
+        maxSize: 2,
+        runChildUpdate: true
     });
 
     this.physics.add.collider(player, floor);
     this.physics.add.collider(enemy, floor);
     this.physics.add.overlap(thunders, enemy, hitEnemy, null, this);
     this.physics.add.overlap(enemy, thunders, hitEnemy, null, this);
+    this.physics.add.overlap(player, enemy, hitPlayer, null, this);
 
     enemy.setCollideWorldBounds(true);
     enemy.setVelocityX(-1000);
@@ -65,7 +68,6 @@ function create() {
     player.setCollideWorldBounds(true);
 
     cursors = this.input.keyboard.createCursorKeys();
-    //this.input.keyboard.on('keydown-SPACE', playerThunders, this);
 
     scoreText = this.add.text(16, 16, "Pontuação: 0", {fontSize: "20px", fontFamily: "Comic Sans MS",fill: "white"});
     livesText = this.add.text(16, 45, "Vidas: 3", {fontSize: "20px", fontFamily: "Comic Sans MS",fill: "white"});
@@ -110,6 +112,7 @@ function playerThunders() {
     const thunder = thunders.get(player.x, player.y - 20);
     if(thunder) {
         thunder.setActive(true).setVisible(true).setScale(0.15);
+        thunder.body.enable = true;
         thunder.body.allowGravity = false;
 
         if(playerDirection === "right") {
@@ -130,6 +133,24 @@ function hitEnemy(enemy, thunders) {
     if(enemyLives <= 0) {
         enemy.disableBody(true, true);
         victoryText.setVisible(true);
-        thunders.clear(true, true);
+    }
+}
+function hitPlayer(player, enemy) {
+    if(!playerColision) return;
+    playerColision = false;
+    playerLives--;
+    livesText.setText(`Vidas: ${playerLives}`);
+
+    if(playerLives <= 0) {
+        player.disableBody(true, true);
+
+        const gameOverText = this.add.text(605, 310, "Você Perdeu", {fontSize: "50px", fontFamily: "Comic Sans MS", fill: "red"});
+    }
+    else {
+        player.setAlpha(0.5);
+        this.time.delayedCall(1500, () => {
+            player.setAlpha(1);
+            playerColision = true;
+        });
     }
 }
